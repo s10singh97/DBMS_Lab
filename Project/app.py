@@ -4,6 +4,7 @@ from flask import Flask, flash, redirect, render_template, request, session, url
 from flask_session import Session
 from yahoo_finance import Share
 from tempfile import gettempdir
+from passlib.apps import custom_app_context as pwd_context
 from helpers import *
 
 # configure application
