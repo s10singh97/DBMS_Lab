@@ -228,3 +228,50 @@ def register():
 
     else:
         return render_template("register.html")
+
+
+@app.route("/sell", methods=["GET", "POST"])
+@login_required
+def sell():
+    """Sell shares of stock."""
+    if request.method == "GET":
+        return render_template("sell.html")
+    else:
+        # ensure proper symbol
+        stock = lookup(request.form.get("symbol"))
+        if not stock:
+            return apology("Invalid Symbol")
+
+        # ensure proper number of shares
+        try:
+            shares = int(request.form.get("shares"))
+            if shares < 0:
+                return apology("Shares must be positive integer")
+        except:
+            return apology("Shares must be positive integer")
+
+        # select the symbol shares of that user
+        user_shares = cursor.execute("SELECT shares FROM portfolio WHERE id = :id AND symbol=:symbol", id=session["user_id"], symbol=stock["symbol"])
+
+        # check if enough shares to sell
+        if not user_shares or int(user_shares[0]["shares"]) < shares:
+            return apology("Not enough shares")
+
+        # update history of a sell
+        cursor.execute("INSERT INTO histories (symbol, shares, price, id, transacted) VALUES(:symbol, :shares, :price, :id, DateTime('now'))", symbol=stock["symbol"], shares=-shares, price=usd(stock["price"]), id=session["user_id"])
+
+        # update user cash (increase)
+        cursor.execute("UPDATE users SET cash = cash + :purchase WHERE id = :id", id=session["user_id"], purchase=stock["price"] * float(shares))
+
+        # decrement the shares count
+        shares_total = user_shares[0]["shares"] - shares
+
+        # if after decrement is zero, delete shares from portfolio
+        if shares_total == 0:
+            cursor.execute("DELETE FROM portfolio WHERE id=:id AND symbol=:symbol", id=session["user_id"], symbol=stock["symbol"])
+        # otherwise, update portfolio shares count
+        else:
+            cursor.execute("UPDATE portfolio SET shares=:shares WHERE id=:id AND symbol=:symbol", shares=shares_total, id=session["user_id"], symbol=stock["symbol"])
+
+        # return to index
+        return redirect(url_for("index"))
