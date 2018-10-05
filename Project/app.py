@@ -194,3 +194,37 @@ def quote():
 
     else:
         return render_template("quote.html")
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    """Register user."""
+
+    if request.method == "POST":
+
+        # ensure username was submitted
+        if not request.form.get("username"):
+            return apology("Must provide username")
+
+        # ensure password was submitted
+        elif not request.form.get("password"):
+            return apology("Must provide password")
+
+        # ensure password and verified password is the same
+        elif request.form.get("password") != request.form.get("passwordretype"):
+            return apology("password doesn't match")
+
+        # insert the new user into users, storing the hash of the user's password
+        result = cursor.execute("INSERT INTO users (username, hash) VALUES(:username, :hash)", username=request.form.get("username"), hash=pwd_context.hash(request.form.get("password")))
+
+        if not result:
+            return apology("Username already exist")
+
+        # remember which user has logged in
+        session["user_id"] = result
+
+        # redirect user to home page
+        return redirect(url_for("index"))
+
+    else:
+        return render_template("register.html")
