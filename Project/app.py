@@ -2,7 +2,6 @@ from flask import Flask
 from flaskext.mysql import MySQL
 from flask import Flask, flash, redirect, render_template, request, session, url_for
 from flask_session import Session
-from yahoo_finance import Share
 from tempfile import gettempdir
 from passlib.apps import custom_app_context as pwd_context
 from helpers import *
@@ -39,19 +38,6 @@ mysql.init_app(app)
 
 conn = mysql.connect()
 cursor = conn.cursor()
-
-def lookup(symbol):
-    try:
-        yahoo = Share(symbol)
-        name = yahoo.get_name()
-        price = yahoo.get_price()
-    except:
-        return None
-    return {
-        "name": name,
-        "price": price,
-        "symbol": symbol.upper()
-    }
 
 
 @app.route("/")

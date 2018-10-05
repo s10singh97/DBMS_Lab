@@ -1,6 +1,7 @@
 import urllib.request
 from flask import redirect, render_template, request, session, url_for
 from functools import wraps
+from yahoo_finance import Share
 
 def apology(top="", bottom=""):
     """Renders message as an apology to user."""
@@ -28,6 +29,29 @@ def login_required(f):
             return redirect(url_for("login", next=request.url))
         return f(*args, **kwargs)
     return decorated_function
+
+def lookup(symbol):
+    # reject symbol if it starts with caret
+    if symbol.startswith("^"):
+        return None
+
+    # reject symbol if it contains comma
+    if "," in symbol:
+        return None
+
+    try:
+        yahoo = Share(symbol)
+        name = yahoo.get_name()
+        price = yahoo.get_price()
+    except:
+        return None
+        
+    return {
+        "name": name,
+        "price": price,
+        "symbol": symbol.upper()
+    }
+
 
 def usd(value):
     """Formats value as USD."""
