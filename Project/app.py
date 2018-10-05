@@ -275,3 +275,27 @@ def sell():
 
         # return to index
         return redirect(url_for("index"))
+
+
+@app.route("/passwordchange", methods=["GET", "POST"])
+@login_required
+def passwordchange():
+    if request.method == "POST":
+
+        # ensure password was submitted
+        if not request.form.get("password"):
+            return apology("Must provide password")
+
+        # ensure new password was submitted
+        elif not request.form.get("newpassword"):
+            return apology("Must provide new password")
+        # ensure password and verified password is the same
+        elif request.form.get("newpassword") != request.form.get("newpasswordretype"):
+            return apology("password doesn't match")
+
+        cursor.execute("UPDATE users SET hash=:hash WHERE id=:id", hash=pwd_context.hash(request.form.get("newpassword")), id=session["user_id"])
+
+        return redirect(url_for("index"))
+
+    else:
+        return render_template("passwordchange.html")
