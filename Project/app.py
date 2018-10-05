@@ -177,3 +177,20 @@ def logout():
 
     # redirect user to login form
     return redirect(url_for("login"))
+
+
+@app.route("/quote", methods=["GET", "POST"])
+@login_required
+def quote():
+    """Get stock quote."""
+
+    if request.method == "POST":
+        rows = lookup(request.form.get("symbol"))
+
+        if not rows:
+            return apology("Invalid Symbol")
+
+        return render_template("quoted.html", stock=rows)
+
+    else:
+        return render_template("quote.html")
