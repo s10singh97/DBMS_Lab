@@ -128,6 +128,7 @@ def buy():
                         shares=shares_total, id=session["user_id"], \
                         symbol=stock["symbol"])
         
+        flash("Bought!")
         # return to index
         return redirect(url_for("index"))
         
@@ -234,6 +235,7 @@ def register():
         # remember which user has logged in
         session["user_id"] = result
 
+        flash("Registered!")
         # redirect user to home page
         return redirect(url_for("index"))
     
@@ -296,6 +298,7 @@ def sell():
                     shares=shares_total, id=session["user_id"], \
                     symbol=stock["symbol"])
         
+        flash("Sold!")
         # return to index
         return redirect(url_for("index"))
         
@@ -344,6 +347,8 @@ def passwordchange():
 
         db.execute("UPDATE users SET hash=:hash WHERE id=:id", \
                 hash=pwd_context.hash(request.form.get("newpassword")), id=session["user_id"])
+
+        flash("Changed!")
 
         return redirect(url_for("index"))
 
