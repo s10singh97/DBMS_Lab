@@ -1,7 +1,8 @@
-import urllib.request
+import requests
+import urllib.parse
+
 from flask import redirect, render_template, request, session, url_for
 from functools import wraps
-from yahoo_finance import Share
 
 def apology(top="", bottom=""):
     """Renders message as an apology to user."""
@@ -31,27 +32,25 @@ def login_required(f):
     return decorated_function
 
 def lookup(symbol):
-    # reject symbol if it starts with caret
-    if symbol.startswith("^"):
-        return None
+    """Look up quote for symbol."""
 
-    # reject symbol if it contains comma
-    if "," in symbol:
-        return None
-
+    # Contact API
     try:
-        yahoo = Share(symbol)
-        name = yahoo.get_name()
-        price = yahoo.get_price()
-    except:
+        response = requests.get(f"https://api.iextrading.com/1.0/stock/{urllib.parse.quote_plus(symbol)}/quote")
+        response.raise_for_status()
+    except requests.RequestException:
         return None
-        
-    return {
-        "name": name,
-        "price": price,
-        "symbol": symbol.upper()
-    }
 
+    # Parse response
+    try:
+        quote = response.json()
+        return {
+            "name": quote["companyName"],
+            "price": float(quote["latestPrice"]),
+            "symbol": quote["symbol"]
+        }
+    except (KeyError, TypeError, ValueError):
+        return None
 
 def usd(value):
     """Formats value as USD."""
