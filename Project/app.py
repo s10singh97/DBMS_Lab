@@ -1,8 +1,13 @@
 from cs50 import SQL
-from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask import Flask, flash, redirect, render_template, request, session, url_for, send_file
 from flask_session import Session
 from passlib.apps import custom_app_context as pwd_context
 from tempfile import gettempdir
+import pandas_datareader.data as web
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from io import BytesIO
 
 from helpers import *
 
@@ -355,3 +360,31 @@ def passwordchange():
 
     else:
         return render_template("passwordchange.html")
+
+
+@app.route("/fig", methods=["GET", "POST"])
+@login_required
+def fig():
+    rows = db.execute("SELECT symbol FROM portfolio\
+                       WHERE id=:id", id=session["user_id"])
+
+    # Create plot of each share symbol which user owns
+    plt.style.use('ggplot')
+    fig = plt.figure(figsize=(13,6))
+    data = []
+    for i in range(0, len(rows)):
+        data.append(web.get_data_yahoo(row[i]["symbol"],'01/01/2017',interval='m'))
+    print(data)
+    for i in range(0, len(data)):
+        data[i]["Close"].plot()
+    plt.ylabel('Price')
+    img = BytesIO()
+    plt.legend()
+    plt.savefig(img)
+    img.seek(0)
+    return send_file(img, mimetype='image/png')
+
+@app.route("/charts", methods=["GET", "POST"])
+@login_required
+def charts():
+    return render_template("charts.html")
