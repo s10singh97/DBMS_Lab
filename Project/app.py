@@ -373,10 +373,10 @@ def fig():
     fig = plt.figure(figsize=(13,6))
     data = []
     for i in range(0, len(rows)):
-        data.append(web.get_data_yahoo(row[i]["symbol"],'01/01/2017',interval='m'))
+        data.append(web.get_data_yahoo(rows[i]["symbol"],'01/01/2017',interval='m'))
     print(data)
     for i in range(0, len(data)):
-        data[i]["Close"].plot()
+        data[i]["Close"].plot(label=str(rows[i]["symbol"]))
     plt.ylabel('Price')
     img = BytesIO()
     plt.legend()

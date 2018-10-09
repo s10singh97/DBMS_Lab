@@ -8,8 +8,10 @@ import matplotlib.pyplot as plt
 plt.style.use('ggplot')
 fig = plt.figure(figsize=(13,6))
 data = []
-data.append(web.get_data_yahoo('IBM','01/01/2015',interval='m'))
-data.append(web.get_data_yahoo('GOOG','01/01/2015',interval='m'))
+li = ['IBM', 'GOOG']
+for i in range(0, len(li)):
+    data.append(web.get_data_yahoo(li[i],'01/01/2017',interval='m'))
+# data.append(web.get_data_yahoo('GOOG','01/01/2015',interval='m'))
 for i in range(0, len(data)):
     data[i]["Close"].plot()
 plt.ylabel('Price')
