@@ -6,6 +6,8 @@ from tempfile import gettempdir
 import pandas_datareader.data as web
 import pandas as pd
 import numpy as np
+import matplotlib as mpl
+mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 from io import BytesIO
 
@@ -13,6 +15,10 @@ from helpers import *
 
 # configure application
 app = Flask(__name__)
+app.run(threaded=True)
+
+# For chart plot image
+# FOLDER = os.path.join('static', 'images')
 
 # ensure responses aren't cached
 if app.config["DEBUG"]:
@@ -30,6 +36,7 @@ app.jinja_env.filters["usd"] = usd
 app.config["SESSION_FILE_DIR"] = gettempdir()
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
+# app.config['UPLOAD_FOLDER'] = FOLDER
 Session(app)
 
 # configure CS50 Library to use SQLite database
@@ -133,7 +140,7 @@ def buy():
                         shares=shares_total, id=session["user_id"], \
                         symbol=stock["symbol"])
         
-        flash("Bought!")
+        flash("Bought!", category="success")
         # return to index
         return redirect(url_for("index"))
         
@@ -176,7 +183,7 @@ def login():
         # remember which user has logged in
         session["user_id"] = rows[0]["id"]
 
-        flash("Login Successful!!")
+        flash("Login Successful!!", category="success")
         # redirect user to home page
         return redirect(url_for("index"))
 
@@ -362,29 +369,68 @@ def passwordchange():
         return render_template("passwordchange.html")
 
 
-@app.route("/fig", methods=["GET", "POST"])
-@login_required
-def fig():
-    rows = db.execute("SELECT symbol FROM portfolio\
-                       WHERE id=:id", id=session["user_id"])
-
-    # Create plot of each share symbol which user owns
-    plt.style.use('ggplot')
-    fig = plt.figure(figsize=(13,6))
-    data = []
-    for i in range(0, len(rows)):
-        data.append(web.get_data_yahoo(rows[i]["symbol"],'01/01/2017',interval='m'))
-    print(data)
-    for i in range(0, len(data)):
-        data[i]["Close"].plot(label=str(rows[i]["symbol"]))
-    plt.ylabel('Price')
-    img = BytesIO()
-    plt.legend()
-    plt.savefig(img)
-    img.seek(0)
-    return send_file(img, mimetype='image/png')
-
 @app.route("/charts", methods=["GET", "POST"])
 @login_required
 def charts():
+    @app.route("/fig")
+    def fig():
+        rows = db.execute("SELECT symbol FROM portfolio\
+                        WHERE id=:id", id=session["user_id"])
+
+        # Create plot of each share symbol which user owns
+        img = BytesIO()
+        plt.style.use('ggplot')
+        fig = plt.figure(figsize=(13,6))
+        data = []
+        for i in range(0, len(rows)):
+            data.append(web.get_data_yahoo(rows[i]["symbol"],'01/01/2017',interval='m'))
+        print(data)
+        for i in range(0, len(data)):
+            data[i]["Close"].plot(label=rows[i]["symbol"])
+        plt.ylabel('Price')
+        plt.legend()
+        plt.savefig(img)
+        img.seek(0)
+        plt.close()
+        return send_file(img, mimetype='image/png')
+
     return render_template("charts.html")
+    # rows = db.execute("SELECT symbol FROM portfolio\
+    #                 WHERE id=:id", id=session["user_id"])
+
+    # # Create plot of each share symbol which user owns
+    # plt.style.use('ggplot')
+    # fig = plt.figure(figsize=(13,6))
+    # data = []
+    # for i in range(0, len(rows)):
+    #     data.append(web.get_data_yahoo(rows[i]["symbol"],'01/01/2017',interval='m'))
+    # print(data)
+    # for i in range(0, len(data)):
+    #     data[i]["Close"].plot(label=rows[i]["symbol"])
+    # plt.ylabel('Price')
+    # plt.legend()
+    # plt.savefig('static/images/chart_plot.png')
+    # plt.close()
+    # full_filename = os.path.join(app.config['UPLOAD_FOLDER'], 'chart_plot.png')
+    # return render_template('charts.html', name = 'chart_plot', url =full_filename)
+
+    # rows = db.execute("SELECT symbol FROM portfolio\
+    #                 WHERE id=:id", id=session["user_id"])
+
+    # # Create plot of each share symbol which user owns
+    # img = BytesIO()
+    # plt.style.use('ggplot')
+    # fig = plt.figure(figsize=(13,6))
+    # data = []
+    # for i in range(0, len(rows)):
+    #     data.append(web.get_data_yahoo(rows[i]["symbol"],'01/01/2017',interval='m'))
+    # print(data)
+    # for i in range(0, len(data)):
+    #     data[i]["Close"].plot(label=rows[i]["symbol"])
+    # plt.ylabel('Price')
+    # plt.legend()
+    # plt.savefig(img, format='png')
+    # img.seek(0)
+    # plot_url = base64.b64encode(img.getvalue()).decode()
+
+    # return '<img src="data:image/png;base64,{}">'.format(plot_url)
