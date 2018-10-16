@@ -7,7 +7,7 @@ import pandas_datareader.data as web
 import pandas as pd
 import numpy as np
 import matplotlib as mpl
-mpl.use('TkAgg')
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 from io import BytesIO
 
@@ -15,7 +15,7 @@ from helpers import *
 
 # configure application
 app = Flask(__name__)
-app.run(threaded=True)
+#app.run(threaded=False)
 
 # For chart plot image
 # FOLDER = os.path.join('static', 'images')
@@ -369,31 +369,33 @@ def passwordchange():
         return render_template("passwordchange.html")
 
 
+@app.route("/fig")
+@login_required
+def fig():
+    rows = db.execute("SELECT symbol FROM portfolio\
+                    WHERE id=:id", id=session["user_id"])
+
+    # Create plot of each share symbol which user owns
+    img = BytesIO()
+    plt.style.use('ggplot')
+    fig = plt.figure(figsize=(13,6))
+    data = []
+    for i in range(0, len(rows)):
+        data.append(web.get_data_yahoo(rows[i]["symbol"],'01/01/2017',interval='m'))
+    print(data)
+    for i in range(0, len(data)):
+        data[i]["Close"].plot(label=rows[i]["symbol"])
+    plt.ylabel('Price')
+    plt.legend()
+    plt.savefig(img)
+    img.seek(0)
+    plt.close()
+    return send_file(img, mimetype='image/png')
+
 @app.route("/charts", methods=["GET", "POST"])
 @login_required
 def charts():
-    @app.route("/fig")
-    def fig():
-        rows = db.execute("SELECT symbol FROM portfolio\
-                        WHERE id=:id", id=session["user_id"])
-
-        # Create plot of each share symbol which user owns
-        img = BytesIO()
-        plt.style.use('ggplot')
-        fig = plt.figure(figsize=(13,6))
-        data = []
-        for i in range(0, len(rows)):
-            data.append(web.get_data_yahoo(rows[i]["symbol"],'01/01/2017',interval='m'))
-        print(data)
-        for i in range(0, len(data)):
-            data[i]["Close"].plot(label=rows[i]["symbol"])
-        plt.ylabel('Price')
-        plt.legend()
-        plt.savefig(img)
-        img.seek(0)
-        plt.close()
-        return send_file(img, mimetype='image/png')
-
+    fig()
     return render_template("charts.html")
     # rows = db.execute("SELECT symbol FROM portfolio\
     #                 WHERE id=:id", id=session["user_id"])
