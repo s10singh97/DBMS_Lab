@@ -9,16 +9,13 @@ import numpy as np
 import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
-from io import BytesIO
+import os
+import shutil
 
 from helpers import *
 
 # configure application
 app = Flask(__name__)
-#app.run(threaded=False)
-
-# For chart plot image
-# FOLDER = os.path.join('static', 'images')
 
 # ensure responses aren't cached
 if app.config["DEBUG"]:
@@ -41,6 +38,11 @@ Session(app)
 
 # configure CS50 Library to use SQLite database
 db = SQL("sqlite:///finance.db")
+
+# Class for storing different charts each time user clicks on Chart Tab
+class Increment:
+    i = -1
+    i += 1
 
 @app.route("/")
 @login_required
@@ -197,6 +199,17 @@ def logout():
 
     # forget any user_id
     session.clear()
+
+    # Clear all the charts created locally
+    folder = 'static/images'
+    for the_file in os.listdir(folder):
+        file_path = os.path.join(folder, the_file)
+        try:
+            if os.path.isfile(file_path):
+                os.unlink(file_path)
+            #elif os.path.isdir(file_path): shutil.rmtree(file_path)
+        except Exception as e:
+            print(e)
 
     # redirect user to login form
     return redirect(url_for("login"))
@@ -369,70 +382,25 @@ def passwordchange():
         return render_template("passwordchange.html")
 
 
-@app.route("/fig")
+@app.route("/charts", methods=["GET", "POST"])
 @login_required
-def fig():
+def charts():
     rows = db.execute("SELECT symbol FROM portfolio\
                     WHERE id=:id", id=session["user_id"])
 
     # Create plot of each share symbol which user owns
-    img = BytesIO()
     plt.style.use('ggplot')
     fig = plt.figure(figsize=(13,6))
     data = []
     for i in range(0, len(rows)):
         data.append(web.get_data_yahoo(rows[i]["symbol"],'01/01/2017',interval='m'))
-    print(data)
     for i in range(0, len(data)):
         data[i]["Close"].plot(label=rows[i]["symbol"])
     plt.ylabel('Price')
     plt.legend()
-    plt.savefig(img)
-    img.seek(0)
-    plt.close()
-    return send_file(img, mimetype='image/png')
-
-@app.route("/charts", methods=["GET", "POST"])
-@login_required
-def charts():
-    fig()
-    return render_template("charts.html")
-    # rows = db.execute("SELECT symbol FROM portfolio\
-    #                 WHERE id=:id", id=session["user_id"])
-
-    # # Create plot of each share symbol which user owns
-    # plt.style.use('ggplot')
-    # fig = plt.figure(figsize=(13,6))
-    # data = []
-    # for i in range(0, len(rows)):
-    #     data.append(web.get_data_yahoo(rows[i]["symbol"],'01/01/2017',interval='m'))
-    # print(data)
-    # for i in range(0, len(data)):
-    #     data[i]["Close"].plot(label=rows[i]["symbol"])
-    # plt.ylabel('Price')
-    # plt.legend()
-    # plt.savefig('static/images/chart_plot.png')
-    # plt.close()
-    # full_filename = os.path.join(app.config['UPLOAD_FOLDER'], 'chart_plot.png')
-    # return render_template('charts.html', name = 'chart_plot', url =full_filename)
-
-    # rows = db.execute("SELECT symbol FROM portfolio\
-    #                 WHERE id=:id", id=session["user_id"])
-
-    # # Create plot of each share symbol which user owns
-    # img = BytesIO()
-    # plt.style.use('ggplot')
-    # fig = plt.figure(figsize=(13,6))
-    # data = []
-    # for i in range(0, len(rows)):
-    #     data.append(web.get_data_yahoo(rows[i]["symbol"],'01/01/2017',interval='m'))
-    # print(data)
-    # for i in range(0, len(data)):
-    #     data[i]["Close"].plot(label=rows[i]["symbol"])
-    # plt.ylabel('Price')
-    # plt.legend()
-    # plt.savefig(img, format='png')
-    # img.seek(0)
-    # plot_url = base64.b64encode(img.getvalue()).decode()
-
-    # return '<img src="data:image/png;base64,{}">'.format(plot_url)
+    plt.draw()
+    fig.canvas.draw()
+    fig.canvas.flush_events()
+    Increment.i += 1
+    plt.savefig("static/images/chart_plot_{}.png".format(Increment.i))
+    return render_template("charts.html", url = "static/images/chart_plot_{}.png".format(Increment.i))
