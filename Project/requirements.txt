@@ -4,3 +4,6 @@ passlib
 SQLAlchemy
 cs50
 requests
+pandas
+numoy
+matplotlib
