@@ -6,4 +6,5 @@ if conn:
 else:
     print("Unsuccessful Connection")
 conn.execute("CREATE TABLE IF NOT EXISTS test(id int)")
+conn.execute("INSERT INTO test VALUES(55)")
 conn.commit()
