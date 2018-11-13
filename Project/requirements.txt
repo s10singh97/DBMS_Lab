@@ -5,5 +5,7 @@ SQLAlchemy
 cs50
 requests
 pandas
-numoy
+numpy
 matplotlib
+socket
+plotly
