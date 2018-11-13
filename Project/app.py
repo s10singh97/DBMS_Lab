@@ -10,6 +10,9 @@ import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 import os
+import plotly
+import socket
+import plotly.graph_objs as go
 
 from helpers import *
 
@@ -386,20 +389,18 @@ def passwordchange():
 def charts():
     rows = db.execute("SELECT symbol FROM portfolio\
                     WHERE id=:id", id=session["user_id"])
-
-    # Create plot of each share symbol which user owns
-    plt.style.use('ggplot')
-    fig = plt.figure(figsize=(13,6))
     data = []
     for i in range(0, len(rows)):
         data.append(web.get_data_yahoo(rows[i]["symbol"],'01/01/2017',interval='m'))
+    for i in range(0, len(rows)):
+        data[i]["Date"] = data[i].index
+    traces = []
     for i in range(0, len(data)):
-        data[i]["Close"].plot(label=rows[i]["symbol"])
-    plt.ylabel('Price')
-    plt.legend()
-    plt.draw()
-    fig.canvas.draw()
-    fig.canvas.flush_events()
-    Increment.i += 1
-    plt.savefig("static/images/chart_plot_{}.png".format(Increment.i))
-    return render_template("charts.html", url = "static/images/chart_plot_{}.png".format(Increment.i))
+        traces.append(go.Scatter(
+            x = data[i]["Date"],
+            y = data[i]["Close"],
+            mode = 'lines+markers',
+            name = rows[i]["symbol"]
+        ))
+    chart = plotly.offline.plot(traces, output_type="div", show_link=False, link_text=False, filename='line-mode')
+    return render_template("charts.html", chart=chart)
