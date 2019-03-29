@@ -1,6 +1,6 @@
 import os
 from socket import *
-host = "172.21.4.55" # set to IP address of target computer
+host = "172.21.4.232" # set to IP address of target computer
 port = 13000
 addr = (host, port)
 addr1 = ("", 13001)

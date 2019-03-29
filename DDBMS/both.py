@@ -10,7 +10,7 @@ port = 13001    # For receiving requests from client
 port2 = 13000   # For responding to user's request
 buf = 1024
 addr = (host, port)
-addr2 = ('172.21.4.255', port2)
+addr2 = ('172.16.7.94', port2)
 print(host)
 UDPSock = socket(AF_INET, SOCK_DGRAM)
 UDPSock2 = socket(AF_INET, SOCK_DGRAM)
